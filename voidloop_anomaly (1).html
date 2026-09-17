@@ -1,0 +1,276 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>VOIDLOOP: ANOMALY</title>
+<style>
+:root{--bg:#080b11;--p:#121827;--ink:#eef4ff;--mut:#94a3c2;--a:#62e7cf;--v:#9b82ff;--r:#ff627d;--g:#ffd166}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 20% 10%,#17203a,transparent 35%),#07090e;color:var(--ink);font-family:Inter,system-ui,Segoe UI,Arial;min-height:100vh;display:grid;place-items:center;overflow:hidden}#wrap{width:min(96vw,1280px);height:min(92vh,800px);position:relative}canvas{width:100%;height:100%;display:block;background:#090c13;border:1px solid #2c3550;border-radius:18px;box-shadow:0 25px 90px #000b;cursor:crosshair}.hud{position:absolute;top:13px;left:13px;right:13px;display:flex;gap:8px;flex-wrap:wrap;pointer-events:none}.pill{background:#0f1522e8;border:1px solid #2c3653;padding:8px 11px;border-radius:999px;font-weight:800;backdrop-filter:blur(7px)}.pill small{color:var(--mut);margin-right:5px}.overlay{position:absolute;inset:0;display:grid;place-items:center;background:#05070bc7;border-radius:18px;backdrop-filter:blur(7px)}.hidden{display:none!important}.card{width:min(92%,920px);max-height:90%;overflow:auto;background:linear-gradient(#171d2d,#0d121d);border:1px solid #303a58;border-radius:22px;padding:26px;box-shadow:0 30px 100px #000}.logo{font-size:clamp(42px,7vw,78px);letter-spacing:-.065em;font-weight:950;margin:0}.accent{color:var(--a)}.tag{color:var(--mut);font-size:16px;line-height:1.5}.row{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}.btn{border:0;border-radius:12px;padding:13px 18px;font:inherit;font-weight:900;background:var(--a);color:#07100f;cursor:pointer}.btn.secondary{background:#252e44;color:var(--ink)}.btn.gold{background:var(--g)}.choices{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:17px}.choice{background:#131a29;border:1px solid #303a56;border-radius:16px;padding:16px;cursor:pointer;transition:.15s}.choice:hover{transform:translateY(-3px);border-color:#7769dc;background:#192239}.choice h3{margin:3px 0 6px}.choice p{margin:0;color:var(--mut);line-height:1.35}.rar{font-size:11px;font-weight:950;letter-spacing:.12em;text-transform:uppercase}.common{color:#c9d2e7}.rare{color:#64b7ff}.epic{color:#b98cff}.legendary{color:#ffd166}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:15px}.stat{background:#0b101a;border:1px solid #262e45;border-radius:12px;padding:11px}.stat b{font-size:20px}.stat span{display:block;color:var(--mut);font-size:12px}.weapon{color:#ffd166}#bossbar{position:absolute;top:61px;left:20%;right:20%;height:12px;background:#161c29;border:1px solid #313a53;border-radius:20px;overflow:hidden;display:none}#bossfill{height:100%;background:linear-gradient(90deg,#ff5471,#ffb05f)}#toast{position:absolute;left:50%;bottom:22px;transform:translateX(-50%);background:#111827e8;border:1px solid #33405d;border-radius:11px;padding:9px 13px;font-weight:900;opacity:0;transition:.2s;pointer-events:none}.synergy{display:inline-block;background:#332d18;border:1px solid #6f5f22;color:#ffe28a;padding:4px 8px;border-radius:8px;font-size:12px;font-weight:850;margin-top:8px}@media(max-width:800px){.choices{grid-template-columns:1fr}.stats{grid-template-columns:1fr 1fr}}
+</style></head><body><div id="wrap"><canvas id="game" width="1280" height="800"></canvas>
+<div class="hud"><div class="pill"><small>HP</small><span id="hp">100/100</span></div><div class="pill"><small>DUNGEON</small><span id="dun">1/5</span></div><div class="pill"><small>ROOM</small><span id="room">1/5</span></div><div class="pill"><small>WEAPON</small><span id="wep">Pulse Rifle</span></div><div class="pill"><small>LVL</small><span id="lvl">1</span></div><div class="pill"><small>SCRAP</small><span id="scrap">0</span></div></div><div id="bossbar"><div id="bossfill"></div></div><div id="toast"></div>
+<div id="menu" class="overlay"><div class="card"><div class="rar epic">ANOMALIES • SECRETS • EVOLUTIONS • RIVALS • ENDLESS</div><h1 class="logo">VOID<span class="accent">LOOP</span></h1><p class="tag">Five dungeons are now only the backbone. Runs can branch into secret rooms, bargains, quests, rival encounters, challenge rooms and Chaos Director anomalies. Weapons evolve from how you play, item pairs transform into named synergies, and bosses have build interactions.</p><div class="stats"><div class="stat"><b id="best">0</b><span>Best Room</span></div><div class="stat"><b id="scoreBest">0</b><span>Best Score</span></div><div class="stat"><b id="echoes">0</b><span>Echoes</span></div><div class="stat"><b id="wins">0</b><span>Dungeon Clears</span></div></div><p class="tag" style="margin-bottom:6px"><b>RUNNER:</b>
+<select id="runner" style="background:#171e2e;color:#eef4ff;border:1px solid #35405e;border-radius:9px;padding:8px;font-weight:800">
+<option value="striker">STRIKER — balanced gunner</option>
+<option value="scrapper">SCRAPPER — scrap powers weapons</option>
+<option value="arcanist">ARCANIST — elemental combos</option>
+<option value="wraith">WRAITH — dashes create attacks</option>
+<option value="broker">BROKER — damage costs scrap before HP</option>
+</select></p><div class="row"><button class="btn" id="start">START DUNGEON RUN</button><button class="btn gold" id="endless">ENDLESS MODE</button><button class="btn secondary" id="meta">ECHO FORGE</button><button class="btn secondary" id="sound">SOUND: ON</button></div><p class="tag" style="font-size:14px">WASD move • Mouse aim • Hold click fire • Space dash • <b>ESC returns to menu</b> • P pause<br>Endless starts locked until you clear the five dungeons once.<br><b>ANOMALY build:</b> secret rooms, curses, quests, rivals, weapon evolution, character mechanics, rule-changing items, named synergy transformations and adaptive Chaos Director events.</p></div></div>
+<div id="upgrade" class="overlay hidden"><div class="card"><div class="rar rare">MUTATION</div><h2>Choose an upgrade</h2><div class="choices" id="upChoices"></div></div></div>
+<div id="chest" class="overlay hidden"><div class="card"><div class="rar legendary">BOSS CHEST</div><h2 id="chestTitle">Choose your reward</h2><p class="tag">Boss chests can completely redirect your build.</p><div class="choices" id="chestChoices"></div></div></div>
+<div id="event" class="overlay hidden"><div class="card"><div class="rar epic" id="eventKicker">ANOMALY</div><h2 id="eventTitle">Something changed.</h2><p class="tag" id="eventText"></p><div class="choices" id="eventChoices"></div><div class="row"><button class="btn secondary hidden" id="eventContinue">CONTINUE</button></div></div></div>
+<div id="metaMenu" class="overlay hidden"><div class="card"><div class="rar legendary">PERMANENT</div><h2>Echo Forge</h2><p class="tag">Small permanent bonuses. The strongest power still comes from your run build.</p><div class="choices" id="metaChoices"></div><div class="row"><button class="btn secondary" id="back">BACK</button></div></div></div>
+<div id="dead" class="overlay hidden"><div class="card"><div class="rar common">RUN ENDED</div><h2>The loop remembers.</h2><div class="stats"><div class="stat"><b id="dRoom">0</b><span>Room Reached</span></div><div class="stat"><b id="dScore">0</b><span>Score</span></div><div class="stat"><b id="dKills">0</b><span>Kills</span></div><div class="stat"><b id="dEcho">0</b><span>Echoes Earned</span></div></div><div class="row"><button class="btn" id="again">RUN IT BACK</button><button class="btn secondary" id="home">MENU</button></div></div></div>
+</div><script>
+const C=document.querySelector('#game'),X=C.getContext('2d'),W=C.width,H=C.height,$=x=>document.getElementById(x),rnd=(a,b)=>Math.random()*(b-a)+a,pick=a=>a[Math.random()*a.length|0],clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+let save=JSON.parse(localStorage.getItem('voidloop-dungeons')||'null')||{best:0,bestScore:0,echoes:0,wins:0,endless:false,runs:0,meta:{hp:0,dmg:0,speed:0,luck:0}};function saveIt(){localStorage.setItem('voidloop-dungeons',JSON.stringify(save));menuStats()}function menuStats(){$('best').textContent=save.best;$('scoreBest').textContent=save.bestScore;$('echoes').textContent=save.echoes;$('wins').textContent=save.wins;$('endless').textContent=save.endless?'ENDLESS MODE':'ENDLESS MODE 🔒'}menuStats();
+// Smooth WebAudio sound engine. No external files; all sounds are synthesized with soft envelopes.
+let audioOn=true,AC=null,master=null,noiseBuf=null;
+function audioInit(){if(AC)return;AC=new (window.AudioContext||window.webkitAudioContext)();master=AC.createGain();master.gain.value=.28;master.connect(AC.destination);noiseBuf=AC.createBuffer(1,AC.sampleRate*.25,AC.sampleRate);let d=noiseBuf.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*(1-i/d.length)}
+function tone(freq=220,dur=.12,type='sine',vol=.1,slide=0,delay=0){if(!audioOn)return;audioInit();let t=AC.currentTime+delay,o=AC.createOscillator(),g=AC.createGain();o.type=type;o.frequency.setValueAtTime(freq,t);if(slide)o.frequency.exponentialRampToValueAtTime(Math.max(30,freq+slide),t+dur);g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(vol,t+.012);g.gain.exponentialRampToValueAtTime(.0001,t+dur);o.connect(g);g.connect(master);o.start(t);o.stop(t+dur+.03)}
+function noise(dur=.08,vol=.05,cut=1400,delay=0){if(!audioOn)return;audioInit();let t=AC.currentTime+delay,s=AC.createBufferSource(),f=AC.createBiquadFilter(),g=AC.createGain();s.buffer=noiseBuf;f.type='lowpass';f.frequency.value=cut;g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(vol,t+.008);g.gain.exponentialRampToValueAtTime(.0001,t+dur);s.connect(f);f.connect(g);g.connect(master);s.start(t);s.stop(t+dur+.02)}
+const sfx={
+ shoot(){tone(150,.055,'sine',.035,85);tone(310,.045,'triangle',.018,-80)},
+ hit(){noise(.045,.035,1700);tone(95,.065,'sine',.025,-25)},
+ hurt(){tone(130,.18,'sine',.09,-70);noise(.12,.05,850)},
+ dash(){noise(.11,.05,1100);tone(190,.14,'sine',.045,170)},
+ kill(){tone(210,.08,'sine',.04,120);tone(420,.1,'sine',.025,90,.025)},
+ pickup(){tone(440,.13,'sine',.045,180);tone(660,.16,'sine',.028,180,.05)},
+ chest(){tone(260,.18,'sine',.055,180);tone(390,.22,'sine',.05,250,.08);tone(620,.3,'sine',.035,260,.16)},
+ boss(){tone(88,.5,'sine',.08,-20);tone(132,.38,'triangle',.035,-15,.08)},
+ clear(){tone(330,.12,'sine',.035,120);tone(495,.15,'sine',.03,160,.08)},
+ menu(){tone(260,.09,'sine',.028,55)}
+};
+function setSound(v){audioOn=v;$('sound').textContent='SOUND: '+(v?'ON':'OFF');if(v){audioInit();if(AC.state==='suspended')AC.resume();sfx.menu()}}
+const DUNGEONS=[
+{name:'Ash Vault',floor:'#170d0e',grid:'#2b1719',accent:'#ff705f',haz:'lava',boss:'The Furnace Heart'},
+{name:'Cryo Lab',floor:'#09151c',grid:'#102a36',accent:'#63d9ff',haz:'ice',boss:'ZERO-KELVIN'},
+{name:'Mycelium Pit',floor:'#10160c',grid:'#1d2c16',accent:'#9ce65e',haz:'spore',boss:'The Bloom Tyrant'},
+{name:'Neon Crypt',floor:'#100b18',grid:'#251738',accent:'#c17cff',haz:'void',boss:'The Hex Engine'},
+{name:'Starless Core',floor:'#080a10',grid:'#151b2a',accent:'#ffd166',haz:'rift',boss:'VOID SOVEREIGN'}];
+const WEAPONS={
+pulse:{name:'Pulse Rifle',rar:'common',desc:'Reliable automatic rifle.',rate:175,dmg:17,speed:760,shots:1,spread:.06,kind:'normal'},
+scatter:{name:'Scatter Cannon',rar:'rare',desc:'Six close-range pellets. Incredible with on-hit effects.',rate:480,dmg:9,speed:690,shots:6,spread:.20,kind:'normal'},
+rail:{name:'Rail Lance',rar:'epic',desc:'Slow, gigantic piercing shots.',rate:650,dmg:72,speed:980,shots:1,spread:0,kind:'rail',pierce:5},
+spinner:{name:'Helix SMG',rar:'epic',desc:'Very fast alternating spiral shots.',rate:92,dmg:10,speed:700,shots:2,spread:.12,kind:'helix'},
+launcher:{name:'Nova Launcher',rar:'epic',desc:'Explosive rockets. Explosion upgrades become absurd.',rate:620,dmg:45,speed:470,shots:1,spread:0,kind:'rocket'},
+beam:{name:'Prism Beam',rar:'legendary',desc:'Rapid light bolts that ricochet between targets.',rate:115,dmg:13,speed:900,shots:1,spread:0,kind:'beam'},
+void:{name:'Void Repeater',rar:'legendary',desc:'Every fourth shot opens a mini-rift that fires extra bullets.',rate:165,dmg:19,speed:740,shots:1,spread:.04,kind:'void'} };
+const U=[
+['Double Tap','common','22% faster firing',p=>p.fireMul*=.78],['Heavy Rounds','common','+28% damage',p=>p.dmgMul*=1.28],['Fleet Footed','common','+12% speed',p=>p.speed*=1.12],['Reinforced Core','common','+20 max HP and heal 20',p=>{p.maxHp+=20;p.hp=Math.min(p.maxHp,p.hp+20)}],['Longshot','common','+20% projectile speed',p=>p.projMul*=1.2],
+['Piercing Rounds','rare','+1 pierce',p=>p.pierce++],['Twin Barrel','rare','+1 projectile',p=>p.extraShots++],['Critical Mass','rare','+12% crit chance',p=>p.crit+=.12],['Leech','rare','Heal every 7 kills',p=>p.leech=Math.max(3,p.leech-2)],['Cryo Payload','rare','Hits slow and stack freeze',p=>p.frost++],['Hunter Rounds','rare','Projectiles home toward enemies',p=>p.homing+=.07],
+['Chain Spark','epic','24% chance to arc lightning',p=>p.chain+=.24],['Explosive Core','epic','Kills explode; rockets gain larger blasts',p=>p.explode+=28],['Toxic Chamber','epic','Hits inflict stacking poison',p=>p.poison++],['Orbiting Saws','epic','Gain a damaging orbital',p=>p.orbitals++],['Afterimage','epic','Dash leaves a damaging ghost blast',p=>p.afterimage=true],['Execution Protocol','epic','2.5× damage below 20% enemy HP',p=>p.execute=true],
+['Echo Chamber','legendary','25% chance to duplicate any projectile',p=>p.echo+=.25],['Singularity','legendary','Every 8th trigger fires a giant void orb',p=>p.singularity=true],['Prismatic Rounds','legendary','Every 6th trigger fires in every direction',p=>p.prism=true],['Berserker Heart','legendary','Kills stack damage until hit',p=>p.berserk=true],['Storm Engine','legendary','Chain lightning can chain again',p=>p.storm=true],['Shatter','legendary','Frozen enemies explode into ice shards',p=>p.shatter=true],['Plague Reactor','legendary','Poisoned enemies spread poison on death',p=>p.plague=true],['Rocket Science','legendary','Explosions launch 4 secondary micro-rockets',p=>p.micro=true]
+].map(([name,rar,desc,apply])=>({name,rar,desc,apply}));
+const RELICS=[
+{name:'Tesla Crown',rar:'legendary',desc:'+35% chain chance. Chain + Storm Engine = thunderstorm.',apply:p=>p.chain+=.35,sy:'CHAIN'},
+{name:'Black Ice',rar:'legendary',desc:'Frozen targets take +80% damage.',apply:p=>p.blackIce=true,sy:'FROST'},
+{name:'Chemical Halo',rar:'epic',desc:'Poison ticks can crit and heal you slightly.',apply:p=>p.chem=true,sy:'POISON'},
+{name:'War Drum',rar:'epic',desc:'Each room cleared grants permanent +7% run damage.',apply:p=>p.warDrum=true,sy:'SCALING'},
+{name:'Glass Reactor',rar:'legendary',desc:'+75% damage, -25 max HP.',apply:p=>{p.dmgMul*=1.75;p.maxHp=Math.max(35,p.maxHp-25);p.hp=Math.min(p.hp,p.maxHp)},sy:'DAMAGE'},
+{name:'Bullet Foundry',rar:'epic',desc:'+1 projectile and +1 pierce.',apply:p=>{p.extraShots++;p.pierce++},sy:'MULTISHOT'},
+{name:'Event Horizon',rar:'legendary',desc:'Explosions pull enemies inward before detonating.',apply:p=>p.gravityBomb=true,sy:'EXPLOSION'},
+{name:'Chrono Trigger',rar:'legendary',desc:'Critical hits reduce dash cooldown.',apply:p=>p.chrono=true,sy:'CRIT + DASH'}];
+
+const SPECIAL_ITEMS=[
+{name:'Loaded Dice',rar:'epic',desc:'Every 6th trigger becomes explosive, piercing, freezing or lightning.',apply:p=>p.loadedDice=true},
+{name:'Black Hole Magazine',rar:'legendary',desc:'Every 18th trigger vacuums hostile bullets and fires their energy back.',apply:p=>p.blackMag=true},
+{name:'Parasite Rounds',rar:'epic',desc:'Shots plant parasites. Deaths spray parasite needles.',apply:p=>p.parasite=true},
+{name:'Debt Collector',rar:'legendary',desc:'You may take rewards on credit. Debt summons bounty hunters but boosts chest quality.',apply:p=>p.debtCollector=true},
+{name:'Glass Heart',rar:'legendary',desc:'Max HP becomes 35, but taking a hit creates a temporary attack clone.',apply:p=>{p.glassHeart=true;p.maxHp=Math.min(p.maxHp,35);p.hp=Math.min(p.hp,p.maxHp)}},
+{name:'Ricochet Matrix',rar:'epic',desc:'Projectiles rebound from arena walls once.',apply:p=>p.ricochet=true},
+{name:'Blood Battery',rar:'epic',desc:'Room clears at low HP grant a permanent fire-rate boost.',apply:p=>p.bloodBattery=true},
+{name:'Mimic Tooth',rar:'rare',desc:'Secret and boss chests can contain an extra reward.',apply:p=>p.mimicTooth=true}
+];
+
+const CHARACTERS={
+striker:{name:'Striker',apply:p=>{}},
+scrapper:{name:'Scrapper',apply:p=>{p.scrapper=true;p.dmgMul*=.92}},
+arcanist:{name:'Arcanist',apply:p=>{p.arcanist=true;p.frost=1;p.poison=1;p.dmgMul*=.88}},
+wraith:{name:'Wraith',apply:p=>{p.wraith=true;p.dashCd*=.72;p.maxHp-=15;p.hp=p.maxHp}},
+broker:{name:'Broker',apply:p=>{p.broker=true;p.scrapShield=true;p.maxHp-=10;p.hp=p.maxHp}}
+};
+
+const SYNERGIES=[
+{id:'cryoBombs',name:'CRYO BOMBS',test:p=>p.frost&&p.explode,desc:'Explosions freeze; frozen deaths detonate.',apply:p=>p.cryoBombs=true},
+{id:'chemIgnite',name:'CHEMICAL IGNITION',test:p=>p.poison&&p.explode,desc:'Poisoned targets erupt for bonus damage.',apply:p=>p.chemIgnite=true},
+{id:'teslaHalo',name:'TESLA HALO',test:p=>p.orbitals&&p.chain,desc:'Orbitals continuously arc lightning.',apply:p=>p.teslaHalo=true},
+{id:'pinball',name:'PINBALL',test:p=>p.ricochet&&p.extraShots,desc:'Ricochets accelerate and gain damage.',apply:p=>p.pinball=true},
+{id:'stormfront',name:'STORMFRONT',test:p=>p.chain&&p.frost,desc:'Lightning spreads freeze stacks.',apply:p=>p.stormfront=true},
+{id:'plagueBurst',name:'PLAGUE BURST',test:p=>p.poison&&p.prism,desc:'Prismatic volleys carry triple poison.',apply:p=>p.plagueBurst=true},
+{id:'eventHorizonPlus',name:'COLLAPSING STAR',test:p=>p.gravityBomb&&p.explode&&p.singularity,desc:'Singularity shots implode into huge blasts.',apply:p=>p.collapsingStar=true}
+];
+
+const ROOM_EVENTS=[
+{kind:'ALTAR',title:'THE RED ALTAR',text:'Accept a dangerous bargain?',choices:[
+ ['DOUBLE CHESTS','Enemies deal +18% damage. Future bosses offer an extra chest reward.',p=>{p.redAltar=true;p.incomingMul*=1.18}],
+ ['BLOOD PRICE','Lose 20 max HP. Gain +40% damage.',p=>{p.maxHp=Math.max(30,p.maxHp-20);p.hp=Math.min(p.hp,p.maxHp);p.dmgMul*=1.4}],
+ ['LEAVE','Walk away.',p=>{}]]},
+{kind:'SHRINE',title:'SHRINE OF VELOCITY',text:'The shrine wants speed, not safety.',choices:[
+ ['OVERDRIVE','+28% fire rate and speed. Enemy bullets +12% speed.',p=>{p.fireMul*=.72;p.speed*=1.18;p.enemyBulletMul*=1.12}],
+ ['DASH ENGINE','Dash cooldown -35%. Dash explosions deal more damage.',p=>{p.dashCd*=.65;p.afterimage=true;p.dashPower=1.7}],
+ ['LEAVE','Keep your build unchanged.',p=>{}]]},
+{kind:'GAMBLER',title:'THE NULL CASINO',text:'Bet scrap for a random outcome.',choices:[
+ ['BET 12 SCRAP','Win a relic, heal, or get cursed.',p=>gamble()],
+ ['CHEAP BET 5','Smaller random reward.',p=>smallGamble()],
+ ['LEAVE','The house cannot win if you do not play.',p=>{}]]}
+];
+
+function checkSynergies(){
+ if(!g)return;
+ for(const sy of SYNERGIES)if(!g.p.synergies.has(sy.id)&&sy.test(g.p)){
+   g.p.synergies.add(sy.id);sy.apply(g.p);toast('SYNERGY FORMED — '+sy.name);sfx.chest();
+ }
+}
+function grantSpecial(item){item.apply(g.p);toast(item.name);sfx.pickup();checkSynergies()}
+function gamble(){
+ if(g.scrap<12){toast('NEED 12 SCRAP');return}
+ g.scrap-=12;let r=Math.random();
+ if(r<.45)grantSpecial(pick(SPECIAL_ITEMS));
+ else if(r<.78){g.p.hp=Math.min(g.p.maxHp,g.p.hp+35);toast('JACKPOT HEAL')}
+ else {g.p.incomingMul*=1.12;g.p.dmgMul*=1.18;toast('CURSE: VIOLENT LUCK')}
+}
+function smallGamble(){
+ if(g.scrap<5){toast('NEED 5 SCRAP');return}
+ g.scrap-=5;if(Math.random()<.65){g.p.hp=Math.min(g.p.maxHp,g.p.hp+15);g.p.crit+=.04;toast('LUCKY')}else{g.p.incomingMul*=1.05;toast('MINOR CURSE')}
+}
+function showEvent(ev,after){
+ paused=true;$('eventKicker').textContent=ev.kind;$('eventTitle').textContent=ev.title;$('eventText').textContent=ev.text;
+ let box=$('eventChoices');box.innerHTML='';
+ ev.choices.forEach(([name,desc,fn])=>{let d=document.createElement('div');d.className='choice';d.innerHTML=`<h3>${name}</h3><p>${desc}</p>`;d.onclick=()=>{fn(g.p);checkSynergies();$('event').classList.add('hidden');paused=false;sfx.menu();after&&after()};box.appendChild(d)});
+ $('event').classList.remove('hidden')
+}
+function maybeEncounter(after){
+ if(!g||g.room===5){after();return}
+ let r=Math.random();
+ if(r<.13){secretRoom(after);return}
+ if(r<.25){showEvent(pick(ROOM_EVENTS),after);return}
+ if(r<.34){questEncounter(after);return}
+ if(r<.43){rivalEncounter(after);return}
+ if(r<.50){chaosEvent(after);return}
+ after()
+}
+function secretRoom(after){
+ let rewards=[
+  ['FORBIDDEN RELIC','Take a rare rule-changing item.',()=>grantSpecial(pick(SPECIAL_ITEMS))],
+  ['CACHE','Gain 18 scrap and heal 20.',()=>{g.scrap+=18;g.p.hp=Math.min(g.p.maxHp,g.p.hp+20)}],
+  ['CRACKED WEAPON CASE','Receive a random weapon and +10% damage.',()=>{let k=pick(Object.keys(WEAPONS));g.p.weapon=k;g.p.dmgMul*=1.1}]
+ ];
+ showEvent({kind:'SECRET ROOM',title:'A WALL WAS NEVER REAL',text:'You found something the dungeon tried to hide.',choices:rewards.map(([a,b,c])=>[a,b,c])},after)
+}
+function questEncounter(after){
+ if(g.quest&& !g.quest.done){after();return}
+ g.quest={type:pick(['clean','untouched','scrap']),startKills:g.kills,startScrap:g.scrap,done:false};
+ let q=g.quest,txt=q.type==='clean'?'Clear the next room without taking damage.':q.type==='untouched'?'Kill 8 enemies before your next hit.':'Collect 12 more scrap.';
+ q.startHp=g.p.hp;
+ showEvent({kind:'QUEST',title:'THE CARTOGRAPHER',text:txt,choices:[
+  ['ACCEPT','Complete it for a special item.',p=>{q.accepted=true}],
+  ['DECLINE','No obligation.',p=>{q=null;g.quest=null}]
+ ]},after)
+}
+function questCheck(){
+ if(!g||!g.quest||!g.quest.accepted||g.quest.done)return;
+ let q=g.quest,ok=false;
+ if(q.type==='untouched'&&g.kills-q.startKills>=8&&g.p.hp>=q.startHp)ok=true;
+ if(q.type==='scrap'&&g.scrap-q.startScrap>=12)ok=true;
+ if(ok){q.done=true;grantSpecial(pick(SPECIAL_ITEMS));toast('QUEST COMPLETE')}
+}
+function rivalEncounter(after){
+ g.rival=(g.rival||{power:1,stolen:0});
+ showEvent({kind:'RIVAL',title:'RIVAL SIGNAL DETECTED',text:`NIX has stolen ${g.rival.stolen} rewards so far. Challenge them now or let them grow stronger.`,choices:[
+  ['DUEL NOW','Spawn NIX as an elite hunter. Winning drops a relic.',p=>{g.pendingRival=true}],
+  ['LET THEM RUN','NIX steals power and may return stronger.',p=>{g.rival.power*=1.3;g.rival.stolen++}],
+  ['BRIBE — 10 SCRAP','Pay them to reveal a secret cache.',p=>{if(g.scrap>=10){g.scrap-=10;grantSpecial(pick(SPECIAL_ITEMS))}}]
+ ]},()=>{after();if(g.pendingRival){g.pendingRival=false;setTimeout(spawnRival,500)}})
+}
+function spawnRival(){
+ if(!g)return;let t=TYPES[1],pow=(g.rival?.power||1)*(1+g.totalRoom*.04);
+ let e={x:W/2,y:90,r:23,name:'NIX',hp:260*pow,maxHp:260*pow,spd:105,dmg:13*pow,c:'#ffffff',pat:'fan',shot:300,spin:0,slow:0,freeze:0,poison:0,pt:0,volatile:false,mirror:true,elite:true,trait:'RIVAL',tc:'#ffffff',rival:true};
+ g.enemies.push(e)
+}
+function chaosEvent(after){
+ let opts=[
+  ['GRAVITY FAILURE','Enemy bullets curve harder. Your projectiles gain homing.',p=>{p.homing+=.08;p.chaosCurve=true}],
+  ['GLASS FLOOR','No hazards this room. Everyone deals +30% damage.',p=>{g.haz=[];p.dmgMul*=1.3;p.incomingMul*=1.3}],
+  ['AMMO BLOOM','Every shot gains +2 projectiles this room.',p=>{p.tempShots=(p.tempShots||0)+2}],
+  ['TIME FRACTURE','Everything hostile slows down by 18%.',p=>{p.timeFracture=true}]
+ ];
+ let o=pick(opts);showEvent({kind:'CHAOS DIRECTOR',title:o[0],text:'The dungeon has changed the rules.',choices:[['ENTER ANOMALY',o[1],o[2]]]},after)
+}
+function weaponEvolutionCheck(){
+ let p=g.p, k=p.weapon, n=p.weaponKills[k]||0;if(p.evolved[k]||n<22)return;
+ let evo={
+ pulse:['Pulse Storm','Every 5th shot fires a 5-round fan.',p=>p.pulseStorm=true],
+ scatter:['Dragonbreath Scatter','Close-range pellets ignite/explode targets.',p=>{p.dragonbreath=true;p.explode+=18}],
+ rail:['Thunder Rail','Rail hits always arc lightning.',p=>{p.thunderRail=true;p.chain=Math.max(p.chain,.5)}],
+ spinner:['Cyclone Engine','Helix shots orbit briefly and gain homing.',p=>{p.cyclone=true;p.homing+=.12}],
+ launcher:['Gravestar Launcher','Rockets pull enemies before exploding.',p=>{p.gravityBomb=true;p.explode+=30}],
+ beam:['Mirror Prism','Beam ricochets and duplicates after bounces.',p=>{p.ricochet=true;p.echo+=.2}],
+ void:['Abyss Repeater','Mini-rifts fire 5 bullets instead of 3.',p=>p.abyss=true]
+ }[k];if(!evo)return;p.evolved[k]=true;evo[2](p);toast('WEAPON EVOLVED — '+evo[0]);sfx.chest();checkSynergies()
+}
+
+const TYPES=[
+{name:'chaser',r:15,hp:34,spd:125,dmg:10,c:'#ff657d',pat:'none'},
+{name:'gunner',r:17,hp:48,spd:72,dmg:8,c:'#ffb45f',pat:'aim'},
+{name:'tank',r:25,hp:125,spd:48,dmg:16,c:'#a184ff',pat:'burst'},
+{name:'spinner',r:18,hp:58,spd:70,dmg:9,c:'#62d6ff',pat:'spin'},
+{name:'sniper',r:16,hp:52,spd:62,dmg:16,c:'#f5e76d',pat:'snipe'},
+{name:'splitter',r:19,hp:72,spd:78,dmg:11,c:'#7ce582',pat:'fan'}];
+const TRAITS=[['Swift','#55e3c7',e=>e.spd*=1.45],['Armored','#bdabff',e=>e.maxHp=e.hp*=1.7],['Frenzied','#ff6876',e=>{e.spd*=1.2;e.dmg*=1.45}],['Volatile','#ffd166',e=>e.volatile=true],['Mirror','#7edcff',e=>e.mirror=true]];
+let keys={},mouse={x:W/2,y:H/2,down:false},g=null,paused=false,last=0,shake=0;
+addEventListener('keydown',e=>{keys[e.key.toLowerCase()]=true;if(e.key===' ')e.preventDefault();if(e.key==='Escape'&&g)returnMenu();if(e.key.toLowerCase()==='p'&&g)paused=!paused});addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);C.onmousemove=e=>{let r=C.getBoundingClientRect();mouse.x=(e.clientX-r.left)*W/r.width;mouse.y=(e.clientY-r.top)*H/r.height};C.onmousedown=()=>mouse.down=true;addEventListener('mouseup',()=>mouse.down=false);
+function hideAll(){['menu','upgrade','chest','event','metaMenu','dead'].forEach(x=>$(x).classList.add('hidden'))}function toast(s){let t=$('toast');t.textContent=s;t.style.opacity=1;clearTimeout(t._);t._=setTimeout(()=>t.style.opacity=0,1350)}
+function player(){let hp=100+save.meta.hp*10;return{x:W/2,y:H/2,r:14,hp,maxHp:hp,speed:230*(1+save.meta.speed*.03),dmgMul:1+save.meta.dmg*.05,fireMul:1,projMul:1,pierce:0,extraShots:0,crit:.05+save.meta.luck*.015,leech:9,frost:0,homing:0,chain:0,explode:0,poison:0,orbitals:0,afterimage:false,execute:false,echo:0,singularity:false,prism:false,berserk:false,berserkStacks:0,storm:false,shatter:false,plague:false,micro:false,blackIce:false,chem:false,warDrum:false,gravityBomb:false,chrono:false,lastShot:0,dash:0,dashCd:1050,ifr:0,triggers:0,weapon:'pulse',runner:'striker',incomingMul:1,enemyBulletMul:1,synergies:new Set(),loadedDice:false,blackMag:false,parasite:false,debtCollector:false,glassHeart:false,ricochet:false,bloodBattery:false,mimicTooth:false,weaponKills:{},evolved:{},tempShots:0,timeFracture:false,chaosCurve:false,dashPower:1}}
+function start(mode='campaign'){audioInit();if(AC.state==='suspended')AC.resume();if(mode==='endless'&&!save.endless){toast('CLEAR ALL 5 DUNGEONS FIRST');return}hideAll();save.runs++;saveIt();g={mode,dungeon:mode==='endless'?5:1,room:1,totalRoom:1,score:0,kills:0,scrap:0,xp:0,need:7,level:1,spawned:0,toSpawn:0,spawnT:0,t:0,p:player(),enemies:[],bullets:[],eb:[],fx:[],haz:[],boss:null,ended:false,clearLock:false,quest:null,rival:{power:1,stolen:0}};g.p.runner=$('runner').value;CHARACTERS[g.p.runner].apply(g.p);beginRoom()}
+function dungeon(){return DUNGEONS[(g.dungeon-1)%5]}
+function beginRoom(){if(!g)return;g.spawned=0;g.spawnT=0;g.enemies=[];g.eb=[];g.haz=[];g.clearLock=false;let boss=g.room===5;g.toSpawn=boss?0:4+g.dungeon+g.room+(g.mode==='endless'?Math.floor(g.totalRoom*.28):0);g.p.ifr=Math.max(g.p.ifr,950);g.spawnT=-650;makeHazards();if(boss){spawnBoss();sfx.boss();}toast(`${dungeon().name} — ${boss?'BOSS':`ROOM ${g.room}`}`);uiUpdate()}
+function makeHazards(){let n=Math.min(4,Math.floor((g.dungeon-1)/2)+(g.room>3?1:0));for(let i=0;i<n;i++)g.haz.push({x:rnd(120,W-120),y:rnd(130,H-110),r:rnd(24,44),phase:rnd(0,6.2),kind:dungeon().haz})}
+function spawnEnemy(minion=false){let side=Math.random()*4|0,x=side===1?W-60:side===3?60:rnd(60,W-60),y=side===0?60:side===2?H-60:rnd(70,H-70),maxTypes=Math.min(TYPES.length,2+g.dungeon+(g.mode==='endless'?2:0)),t=pick(TYPES.slice(0,maxTypes)),scale=1+(g.totalRoom-1)*.035+(g.mode==='endless'?g.totalRoom*.012:0),e={x,y,r:t.r,name:t.name,hp:t.hp*scale,maxHp:t.hp*scale,spd:t.spd*(1+g.totalRoom*.0035),dmg:t.dmg*(1+g.totalRoom*.020),c:t.c,pat:t.pat,shot:rnd(200,800),spin:rnd(0,6.28),slow:0,freeze:0,poison:0,pt:0,volatile:false,mirror:false,elite:false};if(!minion&&Math.random()<Math.min(.26,.025+g.totalRoom*.006)){let tr=pick(TRAITS);e.elite=true;e.trait=tr[0];e.tc=tr[1];e.maxHp*=1.28;e.hp=e.maxHp;tr[2](e)}g.enemies.push(e);if(!minion)g.spawned++}
+function spawnBoss(){let i=(g.dungeon-1)%5,scale=1+Math.max(0,g.totalRoom-5)*.055+(g.mode==='endless'?g.totalRoom*.018:0);g.boss={x:W/2,y:130,r:48,hp:(620+i*175)*scale,maxHp:(620+i*175)*scale,spd:40+i*5,dmg:14+i*2,style:i,shot:0,special:900,angle:0,name:dungeon().boss};$('bossbar').style.display='block'}
+function fireEB(x,y,a,spd=320,dmg=9,r=6,kind='normal'){let mul=(g?.p?.enemyBulletMul||1)*(g?.p?.timeFracture?.82:1);g.eb.push({x,y,vx:Math.cos(a)*spd*mul,vy:Math.sin(a)*spd*mul,dmg,r,life:3200,kind,phase:rnd(0,6.2)})}function enemyPattern(e,dt){e.shot-=dt;e.spin+=dt*.0016;let a=Math.atan2(g.p.y-e.y,g.p.x-e.x);if(e.pat==='none')return;if(e.shot>0)return;if(e.pat==='aim'){fireEB(e.x,e.y,a,285,e.dmg);e.shot=1500}else if(e.pat==='burst'){for(let i=0;i<3;i++)fireEB(e.x,e.y,a+(i-1)*.15,255,e.dmg,6);e.shot=1850}else if(e.pat==='spin'){for(let i=0;i<4;i++)fireEB(e.x,e.y,e.spin+i*1.57,235,e.dmg,6,'curve');e.shot=1150}else if(e.pat==='snipe'){fireEB(e.x,e.y,a,430,e.dmg,5,'laser');e.shot=2300}else if(e.pat==='fan'){for(let i=0;i<5;i++)fireEB(e.x,e.y,a+(i-2)*.20,235,e.dmg);e.shot=1950}}
+function shoot(){let p=g.p,w=WEAPONS[p.weapon],now=performance.now();if(now-p.lastShot<w.rate*p.fireMul)return;p.lastShot=now;p.triggers++;sfx.shoot();let base=Math.atan2(mouse.y-p.y,mouse.x-p.x),shots=w.shots+p.extraShots+(p.tempShots||0),total=Math.max(1,shots);for(let i=0;i<total;i++){let spread=w.spread||.07,a=base+(i-(total-1)/2)*spread;if(w.kind==='helix')a+=Math.sin(g.t*.01+i*Math.PI)*.13;spawnPB(a,w,1)}if(p.prism&&p.triggers%6===0)for(let i=0;i<12;i++)spawnPB(i*Math.PI/6,w,.7);if(p.singularity&&p.triggers%8===0)g.bullets.push({x:p.x,y:p.y,vx:Math.cos(base)*520,vy:Math.sin(base)*520,r:13,dmg:baseDamage(w)*2.5,life:2000,pierce:8,kind:'sing'});if(w.kind==='void'&&p.triggers%4===0)for(let i=-(p.abyss?2:1);i<=(p.abyss?2:1);i++)spawnPB(base+i*.22,w,.72);
+if(p.pulseStorm&&w.kind==='normal'&&p.triggers%5===0)for(let i=-2;i<=2;i++)spawnPB(base+i*.14,w,.65);
+if(p.loadedDice&&p.triggers%6===0){let roll=Math.random()*4|0;if(roll===0)blast(p.x+Math.cos(base)*80,p.y+Math.sin(base)*80,65,baseDamage(w));if(roll===1)p.pierce++;if(roll===2)p.frost++;if(roll===3)chain({x:p.x,y:p.y},baseDamage(w),2)}
+if(p.blackMag&&p.triggers%18===0&&g.eb.length){let n=Math.min(14,g.eb.length);g.eb.splice(0,n);for(let i=0;i<n;i++){let a=base+(i-(n-1)/2)*.035;g.bullets.push({x:p.x,y:p.y,vx:Math.cos(a)*650,vy:Math.sin(a)*650,r:4,dmg:10*p.dmgMul,life:1000,pierce:0,kind:'normal',hit:[]})}toast('BLACK HOLE RELOAD')}
+}
+function baseDamage(w){return w.dmg*g.p.dmgMul*(1+(g.p.berserkStacks||0)*.035)}function spawnPB(a,w,mul=1){let p=g.p,crit=Math.random()<p.crit,d=baseDamage(w)*mul*(crit?2:1),b={x:p.x,y:p.y,vx:Math.cos(a)*w.speed*p.projMul,vy:Math.sin(a)*w.speed*p.projMul,r:w.kind==='rail'?7:w.kind==='rocket'?9:5,dmg:d,life:1900,pierce:(w.pierce||0)+p.pierce,kind:w.kind,crit,hit:[],bounces:p.ricochet?1:0};g.bullets.push(b);if(Math.random()<p.echo){let c={...b,vx:b.vx*.94,vy:b.vy*.94,dmg:b.dmg*.72,r:Math.max(3,b.r-1),hit:[]};g.bullets.push(c)}}
+function hurt(d){let p=g.p;if(p.ifr>0)return;let mercy=p.hp/p.maxHp<.35?.78:1;let actual=d*mercy*p.incomingMul;if(p.scrapShield&&g.scrap>0){let absorb=Math.min(g.scrap,Math.ceil(actual/3));g.scrap-=absorb;actual=Math.max(0,actual-absorb*3)}p.hp-=actual;p.ifr=820;if(p.glassHeart){p.cloneT=3200;p.cloneAngle=Math.random()*6.28}p.berserkStacks=0;shake=6;sfx.hurt();if(p.hp<=0)endRun()}
+function deal(e,b){sfx.hit();let p=g.p,ratio=e.hp/e.maxHp,m=b.dmg;if(p.execute&&ratio<.2)m*=2.5;if(p.blackIce&&e.freeze>=3)m*=1.8;e.hp-=m;if(p.frost){e.slow=Math.max(e.slow,900);e.freeze+=p.frost;if(e.freeze>=5)e.slow=1800}if(p.poison)e.poison+=p.poison*(4+b.dmg*.05);if(p.chain&&Math.random()<p.chain)chain(e,b.dmg*.58,p.storm?2:1);if(e.hp<=0)kill(e)}
+function chain(src,d,depth){let targets=g.enemies.filter(o=>o!==src&&Math.hypot(o.x-src.x,o.y-src.y)<180).sort((a,b)=>Math.hypot(a.x-src.x,a.y-src.y)-Math.hypot(b.x-src.x,b.y-src.y));let o=targets[0];if(o){o.hp-=d;g.fx.push({kind:'zap',x:src.x,y:src.y,x2:o.x,y2:o.y,life:90,c:'#79efff'});if(o.hp<=0)kill(o);if(depth>1&&o)chain(o,d*.65,depth-1)}}
+function blast(x,y,r,d,hurtP=false){if(g.p.gravityBomb)for(let e of g.enemies){let q=Math.hypot(e.x-x,e.y-y);if(q<r*1.7){let a=Math.atan2(y-e.y,x-e.x);e.x+=Math.cos(a)*30;e.y+=Math.sin(a)*30}}for(let e of [...g.enemies])if(Math.hypot(e.x-x,e.y-y)<r){e.hp-=d;if(e.hp<=0)kill(e)}if(g.boss&&Math.hypot(g.boss.x-x,g.boss.y-y)<r)g.boss.hp-=d;g.fx.push({kind:'ring',x,y,r,life:260,c:'#ffd166'});if(hurtP&&Math.hypot(g.p.x-x,g.p.y-y)<r)hurt(d*.35)}
+function kill(e){let i=g.enemies.indexOf(e);if(i<0)return;g.enemies.splice(i,1);g.kills++;sfx.kill();g.p.weaponKills[g.p.weapon]=(g.p.weaponKills[g.p.weapon]||0)+1;weaponEvolutionCheck();if(g.p.scrapper&&g.scrap%8===0)g.p.dmgMul*=1.008;g.score+=e.elite?250:100;g.scrap+=e.elite?3:1;g.xp+=e.elite?2:1;if(g.p.berserk)g.p.berserkStacks=Math.min(20,g.p.berserkStacks+1);if(g.kills%g.p.leech===0)g.p.hp=Math.min(g.p.maxHp,g.p.hp+2);if(g.p.explode)blast(e.x,e.y,45+g.p.explode,g.p.dmgMul*18);if(e.volatile)blast(e.x,e.y,70,20,true);if(g.p.shatter&&e.freeze>=5)for(let k=0;k<8;k++){let a=k*Math.PI/4;g.bullets.push({x:e.x,y:e.y,vx:Math.cos(a)*520,vy:Math.sin(a)*520,r:4,dmg:15*g.p.dmgMul,life:700,pierce:0,kind:'ice',hit:[]})}if(g.p.chemIgnite&&e.poison>0)blast(e.x,e.y,70,12*g.p.dmgMul);if(g.p.parasite)for(let q=0;q<6;q++){let aa=q*Math.PI/3;g.bullets.push({x:e.x,y:e.y,vx:Math.cos(aa)*480,vy:Math.sin(aa)*480,r:3,dmg:10*g.p.dmgMul,life:650,pierce:0,kind:'normal',hit:[]})}if(e.rival){grantSpecial(pick(SPECIAL_ITEMS));if(g.rival)g.rival.power*=.8}if(g.p.plague&&e.poison>0)for(let o of g.enemies)if(Math.hypot(o.x-e.x,o.y-e.y)<130)o.poison+=e.poison*.5;for(let k=0;k<10;k++)g.fx.push({kind:'dot',x:e.x,y:e.y,vx:rnd(-100,100),vy:rnd(-100,100),life:420,r:rnd(2,5),c:e.c});levelCheck();questCheck()}
+function levelCheck(){if(g.xp>=g.need){g.xp-=g.need;g.level++;g.need=Math.floor(g.need*1.33+3);showUpgrades()}}
+function rarityRoll(){let r=Math.random()+save.meta.luck*.008;if(r>.985)return'legendary';if(r>.82)return'epic';if(r>.47)return'rare';return'common'}function showUpgrades(){paused=true;let out=[];while(out.length<3){let rar=rarityRoll(),u=pick(U.filter(x=>x.rar===rar));if(!out.includes(u))out.push(u)}let box=$('upChoices');box.innerHTML='';out.forEach(u=>{let d=document.createElement('div');d.className='choice';d.innerHTML=`<div class="rar ${u.rar}">${u.rar}</div><h3>${u.name}</h3><p>${u.desc}</p>${synergyText(u.name)}`;d.onclick=()=>{u.apply(g.p);checkSynergies();sfx.pickup();$('upgrade').classList.add('hidden');paused=false;toast(u.name)};box.appendChild(d)});$('upgrade').classList.remove('hidden')}
+function synergyText(name){let map={'Chain Spark':'Storm Engine / Tesla Crown','Cryo Payload':'Shatter / Black Ice','Toxic Chamber':'Plague Reactor / Chemical Halo','Explosive Core':'Nova Launcher / Event Horizon / Rocket Science','Critical Mass':'Chrono Trigger','Twin Barrel':'Scatter Cannon / on-hit effects'};return map[name]?`<span class="synergy">SYNERGY: ${map[name]}</span>`:''}
+function chest(){paused=true;$('chestTitle').textContent=`${dungeon().boss} defeated — choose 1`;let opts=[],weaponKeys=Object.keys(WEAPONS).filter(k=>k!==g.p.weapon);opts.push({type:'weapon',...WEAPONS[pick(weaponKeys)],key:pick([])});let wk=pick(weaponKeys);opts[0]={type:'weapon',...WEAPONS[wk],key:wk};opts.push({type:'relic',...pick(RELICS)});let u=Math.random()<.5?pick(SPECIAL_ITEMS):pick(U.filter(x=>x.rar==='epic'||x.rar==='legendary'));opts.push({type:'mutation',...u});if(g.p.redAltar||g.p.mimicTooth)opts.push({type:'secret',...pick(SPECIAL_ITEMS)});let box=$('chestChoices');box.innerHTML='';opts.forEach(o=>{let d=document.createElement('div');d.className='choice';d.innerHTML=`<div class="rar ${o.rar||'epic'}">${o.type}</div><h3>${o.name}</h3><p>${o.desc}</p>${o.sy?`<span class="synergy">BUILD: ${o.sy}</span>`:''}`;d.onclick=()=>{if(o.type==='weapon')g.p.weapon=o.key;else o.apply(g.p);checkSynergies();$('chest').classList.add('hidden');paused=false;advanceAfterBoss()};box.appendChild(d)});$('chest').classList.remove('hidden')}
+function advanceAfterBoss(){if(g.mode==='campaign'&&g.dungeon===5){save.wins++;save.endless=true;save.echoes+=10;saveIt();g.mode='endless';g.dungeon=5;g.room=1;g.totalRoom++;toast('ENDLESS RIFT UNLOCKED');beginRoom();return}if(g.mode==='campaign'){g.dungeon++;g.room=1;g.totalRoom++;}else{g.room++;g.totalRoom++;if(g.room>5){g.room=1;g.dungeon=g.dungeon%5+1}}if(g.p.warDrum)g.p.dmgMul*=1.07;g.p.hp=Math.min(g.p.maxHp,g.p.hp+24);sfx.pickup();beginRoom()}
+function roomClear(){if(g.clearLock)return;g.clearLock=true;if(g.p.warDrum)g.p.dmgMul*=1.07;if(g.p.bloodBattery&&g.p.hp/g.p.maxHp<.4)g.p.fireMul*=.97;if(g.quest&&g.quest.accepted&&!g.quest.done&&g.quest.type==='clean'&&g.p.hp>=g.quest.startHp){g.quest.done=true;grantSpecial(pick(SPECIAL_ITEMS));toast('QUEST COMPLETE')}g.p.hp=Math.min(g.p.maxHp,g.p.hp+10);g.p.tempShots=0;g.p.timeFracture=false;sfx.clear();setTimeout(()=>{if(!g||g.ended)return;maybeEncounter(()=>{g.room++;g.totalRoom++;beginRoom()})},350)}
+function bossDead(){if(!g.boss)return;g.score+=3000*g.dungeon;g.scrap+=20;g.boss=null;$('bossbar').style.display='none';g.eb=[];toast('BOSS CHEST DROPPED');sfx.chest();setTimeout(()=>{if(g&&!g.ended)chest()},350)}
+function bossUpdate(dt){let b=g.boss,p=g.p;if(!b)return;b.shot-=dt;b.special-=dt;b.angle+=dt*.00125;let a=Math.atan2(p.y-b.y,p.x-b.x);b.x+=Math.cos(a)*b.spd*dt/1000;b.y+=Math.sin(a)*b.spd*dt/1000;if(b.shot<=0){
+if(b.style===0){for(let i=0;i<10;i++)fireEB(b.x,b.y,b.angle+i*Math.PI/5,235,b.dmg)}
+else if(b.style===1){for(let i=-2;i<=2;i++)fireEB(b.x,b.y,a+i*.16,315,b.dmg,6,'curve')}
+else if(b.style===2){for(let ring=0;ring<2;ring++)for(let i=0;i<7;i++)fireEB(b.x,b.y,b.angle+ring*.22+i*Math.PI*2/7,220+ring*60,b.dmg)}
+else if(b.style===3){for(let i=0;i<4;i++)fireEB(b.x,b.y,a+i*Math.PI/2,275,b.dmg,7,'orbit')}
+else{for(let i=0;i<14;i++)fireEB(b.x,b.y,b.angle+i*Math.PI/7,255+(i%2)*55,b.dmg,6,i%2?'curve':'normal')}
+b.shot=[1050,900,1180,980,980][b.style]}
+if(b.special<=0){
+if(b.style===0)for(let i=0;i<2;i++)spawnEnemy(true);
+if(b.style===1)for(let i=0;i<8;i++)fireEB(b.x,b.y,i*Math.PI/4,185,b.dmg,9);
+if(b.style===2)for(let i=0;i<2;i++)spawnEnemy(true);
+if(b.style===3){b.x=rnd(170,W-170);b.y=rnd(140,H-150);for(let i=0;i<8;i++)fireEB(b.x,b.y,i*Math.PI/4,300,b.dmg)}
+if(b.style===4)for(let i=0;i<18;i++)fireEB(b.x,b.y,rnd(0,6.28),rnd(190,330),b.dmg,5,'curve');
+b.special=3100}
+if(Math.hypot(p.x-b.x,p.y-b.y)<p.r+b.r)hurt(b.dmg*.8);$('bossfill').style.width=100*b.hp/b.maxHp+'%';if(b.hp<=0)bossDead()}
+function update(dt){if(!g||paused||g.ended)return;g.t+=dt;let p=g.p;if(p.ifr>0)p.ifr-=dt;p.dash=Math.max(0,p.dash-dt);let dx=(keys.d?1:0)-(keys.a?1:0),dy=(keys.s?1:0)-(keys.w?1:0),l=Math.hypot(dx,dy)||1;p.x=clamp(p.x+dx/l*p.speed*dt/1000,44,W-44);p.y=clamp(p.y+dy/l*p.speed*dt/1000,44,H-44);if(keys[' ']&&p.dash<=0){let ox=p.x,oy=p.y;p.x=clamp(p.x+dx/l*115,44,W-44);p.y=clamp(p.y+dy/l*115,44,H-44);p.ifr=380;p.dash=p.dashCd;keys[' ']=false;sfx.dash();if(p.afterimage)blast(ox,oy,70,24*p.dmgMul);shake=4}if(mouse.down)shoot();
+for(let h of g.haz){h.phase+=dt*.0019;let d=Math.hypot(p.x-h.x,p.y-h.y);if(h.kind==='ice'&&d<h.r)p.x-=dx/l*.08*dt;if(Math.sin(h.phase)>.72&&d<h.r)hurt(4)}if(!g.boss&&g.spawned<g.toSpawn){g.spawnT+=dt;if(g.spawnT>Math.max(520,900-g.totalRoom*5)){g.spawnT=0;spawnEnemy()}}if(g.boss)bossUpdate(dt);
+for(let e of [...g.enemies]){let a=Math.atan2(p.y-e.y,p.x-e.x),d=Math.hypot(p.x-e.x,p.y-e.y),sm=e.slow>0?.45:1;e.slow=Math.max(0,e.slow-dt);if(e.name==='gunner'||e.name==='sniper'||e.name==='spinner'){if(d>360){e.x+=Math.cos(a)*e.spd*sm*dt/1000;e.y+=Math.sin(a)*e.spd*sm*dt/1000}else if(d<230){e.x-=Math.cos(a)*e.spd*sm*dt/1000;e.y-=Math.sin(a)*e.spd*sm*dt/1000}}else{e.x+=Math.cos(a)*e.spd*sm*dt/1000;e.y+=Math.sin(a)*e.spd*sm*dt/1000}enemyPattern(e,dt);if(d<e.r+p.r)hurt(e.dmg*.72);if(e.poison>0){e.pt+=dt;if(e.pt>400){e.pt=0;let pd=Math.max(1,e.poison*.12)*(p.chem&&Math.random()<p.crit?2:1);e.hp-=pd;if(p.chem)p.hp=Math.min(p.maxHp,p.hp+.12);if(e.hp<=0)kill(e)}}}
+for(let i=0;i<p.orbitals;i++){let a=g.t*.003+i*6.28/p.orbitals,x=p.x+Math.cos(a)*57,y=p.y+Math.sin(a)*57;for(let e of [...g.enemies])if(Math.hypot(e.x-x,e.y-y)<e.r+10){e.hp-=.035*dt*p.dmgMul;if(e.hp<=0)kill(e)}if(g.boss&&Math.hypot(g.boss.x-x,g.boss.y-y)<g.boss.r+10)g.boss.hp-=.02*dt*p.dmgMul}
+if(p.cloneT>0){p.cloneT-=dt;p.cloneAngle+=dt*.004;if(Math.random()<dt/180){let a=Math.atan2(mouse.y-p.y,mouse.x-p.x)+Math.sin(p.cloneAngle)*.2,w=WEAPONS[p.weapon];g.bullets.push({x:p.x+Math.cos(p.cloneAngle)*38,y:p.y+Math.sin(p.cloneAngle)*38,vx:Math.cos(a)*w.speed,vy:Math.sin(a)*w.speed,r:4,dmg:baseDamage(w)*.55,life:900,pierce:0,kind:'normal',hit:[]})}}
+if(p.teslaHalo&&p.orbitals&&g.enemies.length&&Math.random()<dt/260)chain({x:p.x,y:p.y},12*p.dmgMul,2);
+for(let b of g.bullets){if(p.homing&&g.enemies.length){let target=g.enemies.reduce((m,e)=>Math.hypot(e.x-b.x,e.y-b.y)<Math.hypot(m.x-b.x,m.y-b.y)?e:m,g.enemies[0]),want=Math.atan2(target.y-b.y,target.x-b.x),cur=Math.atan2(b.vy,b.vx),dif=Math.atan2(Math.sin(want-cur),Math.cos(want-cur)),sp=Math.hypot(b.vx,b.vy);cur+=dif*p.homing;b.vx=Math.cos(cur)*sp;b.vy=Math.sin(cur)*sp}b.x+=b.vx*dt/1000;b.y+=b.vy*dt/1000;b.life-=dt;for(let e of [...g.enemies])if(!b.dead&&!b.hit.includes(e)&&Math.hypot(b.x-e.x,b.y-e.y)<b.r+e.r){b.hit.push(e);deal(e,b);if(b.kind==='rocket'){blast(b.x,b.y,65+p.explode,b.dmg*.75);if(p.micro)for(let k=0;k<4;k++){let a=k*Math.PI/2;g.bullets.push({x:b.x,y:b.y,vx:Math.cos(a)*500,vy:Math.sin(a)*500,r:3,dmg:b.dmg*.28,life:500,pierce:0,kind:'micro',hit:[]})}b.dead=true}else if(b.pierce>0)b.pierce--;else b.dead=true}if(g.boss&&!b.dead&&Math.hypot(b.x-g.boss.x,b.y-g.boss.y)<b.r+g.boss.r){let bd=b.dmg;if(g.p.frost&&g.boss.style===0)bd*=1.18;if(b.kind==='rocket'&&g.boss.style===3)bd*=1.25;g.boss.hp-=bd;if(b.kind==='rocket')blast(b.x,b.y,65+p.explode,b.dmg*.75);if(b.pierce>0)b.pierce--;else b.dead=true;if(b.crit&&p.chrono)p.dash=Math.max(0,p.dash-140)}}
+for(let b of g.eb){if(b.kind==='curve'){let a=(g.p.chaosCurve?.0024:.0015)*dt,cs=Math.cos(a),sn=Math.sin(a),vx=b.vx*cs-b.vy*sn,vy=b.vx*sn+b.vy*cs;b.vx=vx;b.vy=vy}else if(b.kind==='orbit'){let a=.003*dt,cs=Math.cos(a),sn=Math.sin(a),vx=b.vx*cs-b.vy*sn,vy=b.vx*sn+b.vy*cs;b.vx=vx;b.vy=vy}b.x+=b.vx*dt/1000;b.y+=b.vy*dt/1000;b.life-=dt;if(Math.hypot(b.x-p.x,b.y-p.y)<b.r+p.r){hurt(b.dmg);b.dead=true}}
+for(let b of g.bullets)if(b.bounces>0&&(b.x<42||b.x>W-42||b.y<42||b.y>H-42)){if(b.x<42||b.x>W-42)b.vx*=-1;if(b.y<42||b.y>H-42)b.vy*=-1;b.x=clamp(b.x,43,W-43);b.y=clamp(b.y,43,H-43);b.bounces--;if(g.p.pinball){b.vx*=1.18;b.vy*=1.18;b.dmg*=1.35}}g.bullets=g.bullets.filter(b=>!b.dead&&b.life>0&&b.x>-50&&b.x<W+50&&b.y>-50&&b.y<H+50);g.eb=g.eb.filter(b=>!b.dead&&b.life>0&&b.x>-70&&b.x<W+70&&b.y>-70&&b.y<H+70);for(let f of g.fx){f.life-=dt;f.x+=(f.vx||0)*dt/1000;f.y+=(f.vy||0)*dt/1000}g.fx=g.fx.filter(f=>f.life>0);if(!g.boss&&g.spawned>=g.toSpawn&&g.enemies.length===0)roomClear();uiUpdate()}
+function uiUpdate(){if(!g)return;$('hp').textContent=`${Math.ceil(g.p.hp)}/${g.p.maxHp}`;$('dun').textContent=g.mode==='endless'?`RIFT ${g.dungeon}`:`${g.dungeon}/5`;$('room').textContent=`${g.room}/5`;$('wep').textContent=WEAPONS[g.p.weapon].name+(g.p.evolved[g.p.weapon]?' ★':'');$('lvl').textContent=g.level;$('scrap').textContent=g.scrap}
+function draw(){X.save();X.clearRect(0,0,W,H);if(shake>0){X.translate(rnd(-shake,shake),rnd(-shake,shake));shake*=.86}let d=g?dungeon():DUNGEONS[0];X.fillStyle=d.floor;X.fillRect(0,0,W,H);X.strokeStyle=d.grid;for(let x=0;x<W;x+=64){X.beginPath();X.moveTo(x,0);X.lineTo(x,H);X.stroke()}for(let y=0;y<H;y+=64){X.beginPath();X.moveTo(0,y);X.lineTo(W,y);X.stroke()}X.strokeStyle=d.accent;X.globalAlpha=.35;X.lineWidth=3;X.strokeRect(34,34,W-68,H-68);X.globalAlpha=1;if(!g){X.restore();return}for(let h of g.haz){X.beginPath();X.arc(h.x,h.y,h.r,0,6.28);let hot=Math.sin(h.phase)>.62;X.fillStyle=hot?d.accent+'66':d.accent+'18';X.fill();X.strokeStyle=d.accent+'88';X.stroke()}for(let b of g.bullets){X.fillStyle=b.kind==='sing'?'#fff0a6':b.kind==='ice'?'#8eeaff':'#eaf8ff';X.beginPath();X.arc(b.x,b.y,b.r,0,6.28);X.fill()}for(let b of g.eb){X.fillStyle=b.kind==='laser'?'#fff06b':'#ff7187';X.beginPath();X.arc(b.x,b.y,b.r,0,6.28);X.fill()}for(let e of g.enemies){X.fillStyle=e.elite?e.tc:e.c;X.beginPath();X.arc(e.x,e.y,e.r,0,6.28);X.fill();X.fillStyle='#10131b';X.beginPath();X.arc(e.x+5,e.y-4,Math.max(3,e.r*.17),0,6.28);X.fill();if(e.elite){X.fillStyle='#111827';X.fillRect(e.x-e.r,e.y-e.r-11,e.r*2,4);X.fillStyle=e.tc;X.fillRect(e.x-e.r,e.y-e.r-11,e.r*2*e.hp/e.maxHp,4)}}if(g.boss){let b=g.boss;X.fillStyle=d.accent;X.beginPath();X.arc(b.x,b.y,b.r,0,6.28);X.fill();X.strokeStyle='#fff8';X.lineWidth=4;X.stroke();X.fillStyle='#0b0d13';X.beginPath();X.arc(b.x+14,b.y-8,9,0,6.28);X.fill()}let p=g.p;for(let i=0;i<p.orbitals;i++){let a=g.t*.003+i*6.28/p.orbitals;X.fillStyle='#ffd166';X.beginPath();X.arc(p.x+Math.cos(a)*57,p.y+Math.sin(a)*57,10,0,6.28);X.fill()}X.save();X.translate(p.x,p.y);X.rotate(Math.atan2(mouse.y-p.y,mouse.x-p.x));X.globalAlpha=p.ifr>0&&Math.floor(p.ifr/70)%2?.35:1;X.fillStyle='#edf6ff';X.beginPath();X.arc(0,0,p.r,0,6.28);X.fill();X.fillStyle=d.accent;X.fillRect(8,-4,25,8);X.restore();for(let f of g.fx){X.globalAlpha=Math.min(1,f.life/180);if(f.kind==='zap'){X.strokeStyle=f.c;X.lineWidth=3;X.beginPath();X.moveTo(f.x,f.y);X.lineTo(f.x2,f.y2);X.stroke()}else if(f.kind==='ring'){X.strokeStyle=f.c;X.lineWidth=4;X.beginPath();X.arc(f.x,f.y,f.r*(1-f.life/260),0,6.28);X.stroke()}else{X.fillStyle=f.c;X.beginPath();X.arc(f.x,f.y,f.r||3,0,6.28);X.fill()}}X.globalAlpha=1;X.restore()}
+function endRun(){if(!g||g.ended)return;g.ended=true;$('bossbar').style.display='none';let earned=Math.max(1,Math.floor(g.totalRoom/3)+Math.floor(g.score/14000));save.echoes+=earned;save.best=Math.max(save.best,g.totalRoom);save.bestScore=Math.max(save.bestScore,g.score);saveIt();$('dRoom').textContent=g.totalRoom;$('dScore').textContent=g.score;$('dKills').textContent=g.kills;$('dEcho').textContent=earned;$('dead').classList.remove('hidden')}
+function returnMenu(){paused=false;g=null;$('bossbar').style.display='none';hideAll();$('menu').classList.remove('hidden');menuStats()}
+function meta(){hideAll();$('metaMenu').classList.remove('hidden');let defs=[['hp','Reinforced Memory','+10 starting HP'],['dmg','Weapon Memory','+5% starting damage'],['speed','Motion Memory','+3% speed'],['luck','Lucky Memory','Better rarity + crit chance']],box=$('metaChoices');box.innerHTML='';defs.forEach(([k,n,ds])=>{let rank=save.meta[k],cost=2+rank*2,c=document.createElement('div');c.className='choice';c.innerHTML=`<div class="rar rare">RANK ${rank}/10</div><h3>${n}</h3><p>${ds}<br><b style="color:#ffd166">Cost ${cost} Echoes</b></p>`;c.onclick=()=>{if(rank<10&&save.echoes>=cost){save.echoes-=cost;save.meta[k]++;saveIt();meta()}else toast('NOT ENOUGH ECHOES')};box.appendChild(c)})}
+$('start').onclick=()=>start('campaign');$('endless').onclick=()=>start('endless');$('again').onclick=()=>start('campaign');$('home').onclick=returnMenu;$('meta').onclick=meta;$('back').onclick=returnMenu;$('sound').onclick=()=>setSound(!audioOn);
+function loop(t){let dt=Math.min(34,t-last||16);last=t;update(dt);draw();requestAnimationFrame(loop)}requestAnimationFrame(loop);
+</script></body></html>
